@@ -1,0 +1,43 @@
+name: Build and Push
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v3
+
+      - name: Docker Hub 로그인
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 이미지 빌드 & 푸시
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: kkoldduck2/my-app:${{ github.sha }}
+
+      - name: my-app-gitops 체크아웃
+        uses: actions/checkout@v3
+        with:
+          repository: kkoldduck2/my-app-gitops
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: my-app-gitops
+
+      - name: 이미지 태그 업데이트
+        run: |
+          cd my-app-gitops
+          kustomize edit set image \
+            kkoldduck2/my-app=kkoldduck2/my-app:${{ github.sha }}
+          git config user.email "github-actions@github.com"
+          git config user.name "GitHub Actions"
+          git add kustomize/kustomization.yaml
+          git commit -m "chore: update image tag ${{ github.sha }}"
+          git push
