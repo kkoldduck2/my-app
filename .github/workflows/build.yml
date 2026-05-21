@@ -3,6 +3,7 @@ name: Build and Push
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -33,7 +34,7 @@ jobs:
 
       - name: 이미지 태그 업데이트
         run: |
-          cd my-app-gitops
+          cd my-app-gitops/kustomize
           kustomize edit set image \
             kkoldduck2/my-app=kkoldduck2/my-app:${{ github.sha }}
           git config user.email "github-actions@github.com"
