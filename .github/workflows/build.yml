@@ -18,12 +18,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: 날짜 태그 생성
+        id: tag
+        run: echo "TAG=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
       - name: 이미지 빌드 & 푸시
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: kkoldduck2/my-app:${{ github.sha }}
+          tags: kkoldduck2/my-app:${{ steps.tag.outputs.TAG }}
 
       - name: my-app-gitops 체크아웃
         uses: actions/checkout@v3
@@ -36,9 +40,9 @@ jobs:
         run: |
           cd my-app-gitops/kustomize
           kustomize edit set image \
-            kkoldduck2/my-app=kkoldduck2/my-app:${{ github.sha }}
+            kkoldduck2/my-app=kkoldduck2/my-app:${{ steps.tag.outputs.TAG }}
           git config user.email "github-actions@github.com"
           git config user.name "GitHub Actions"
           git add kustomization.yaml
-          git commit -m "chore: update image tag ${{ github.sha }}"
+          git commit -m "chore: update image tag ${{ steps.tag.outputs.TAG }}"
           git push
